@@ -8,13 +8,14 @@ from app.week2.practice3 import router as practice3_router
 app = FastAPI()
 
 items: list[dict] = [
-    {'id':1, 'data':'apple'}, 
-    {'id':2, 'data':'banana'}, 
-    {'id':3, 'data':'cherry'}, 
+    {'id':1, 'data':'apple', 'price': 4000}, 
+    {'id':2, 'data':'banana', 'price': 7000}, 
+    {'id':3, 'data':'cherry', 'price': 500}, 
     ]
 
 class ItemCreate(BaseModel):
     data: str
+    price: int
 
 @app.post("/items")
 async def create_item(payload: ItemCreate):
@@ -38,16 +39,34 @@ async def read_item(item_id: int):
 
 @app.get("/items/all/")
 async def all_items():
-    return {"all items": items}
+    return get_items()
 
 
-@app.get("/items")
-async def find_itemByName(q: str):
+def find_itemByPrice(q: int):
+    temp: list[str] = []
     for i in items:
-        if q==i:
+        if q >= i.get('price'):
+            temp.append(i.get('data'))
+    if not temp: return {"result": "not found"}
+    return {"can buy" :temp}
+
+def find_itemByName(q: str):
+    for i in items:
+        if q==i.get('data'):
             return {"result": i}
     return {"result": "not found"}
 
+def get_items():
+    return {"all items": items}
+
+@app.get("/items")
+async def _find(q: str | None = None):
+    if q is None: return get_items()
+    if q.isdigit():
+        return find_itemByPrice(int(q))
+    elif isinstance(q, str):
+        return find_itemByName(q)
+    return {"result": "not valid parameter"}
 
 #같은 path(/items)일 경우 --> 현재는 /items/all/ 로 바꿔놨음
 # def ~~(q: str | None : None):
